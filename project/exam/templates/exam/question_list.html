@@ -1,0 +1,10 @@
+<h2>Questions</h2>
+<ul>
+  {% for question in questions %}
+  <li>
+    <a href="{{base_url}}{{question.id}}"
+      >{{question.topic}} - {{ question.question_text }}</a
+    >
+  </li>
+  {% endfor %}
+</ul>

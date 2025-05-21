@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Math exam - Teacher Dashboard</title>
+    <link rel="stylesheet" href="{% static 'exam/comments.css' %}" />
+    <link rel="stylesheet" href="{% static 'exam/logout.css' %}" />
+  </head>
+  <body>
+    <h1>Welcome {{student.user.username}}!</h1>
+    <form method="post" action="../../logout/">
+      {% csrf_token %}
+      <button type="submit" class="logout-button">Logout</button>
+    </form>
+    {% include "exam/question_finder.html"%}<br />
+    {% include "exam/question_list.html" %}
+    <p><strong>Grade:</strong> {{ student.grade }}</p>
+    <h2>Your comments</h2>
+    {% if student.user.comments.all %} {% for comment in student.user.comments.all %}
+    <div class="comment-box">
+      <div class="comment-header">
+        <span class="comment-title">{{ comment.title }}</span>
+        <span class="comment-user">by {{ comment.user.username }}</span>
+      </div>
+      <div class="comment-body">{{ comment.comment_text }}</div>
+      <div class="comment-footer">
+        <span class="comment-date">{{ comment.pub_date|date:"Y-m-d" }}</span>
+      </div>
+    </div>
+    {% endfor %} {% else %}
+    <p>You have not made any comments yet.</p>
+    {% endif %}
+    <h3>Leave a comment</h3>
+    <form method="post" class="comment-box" action="../comment/">
+      {% csrf_token %}
+      <label for="title">Title:</label>
+      <input type="text" name="title" required />
+      <br />
+      <label for="comment_text">Comment:</label>
+      <textarea
+        id="comment_text"
+        name="comment_text"
+        rows="4"
+        required
+      ></textarea>
+      <br />
+      <button type="submit">Submit</button>
+    </form>
+  </body>
+</html>

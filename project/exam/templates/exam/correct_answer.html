@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Question {{question.id}}</title>
+  </head>
+  <body>
+    {% include "exam/question_detail.html"%}
+    <p>The correct answer is {{correct_answer.answer_text}}</p>
+  </body>
+</html>

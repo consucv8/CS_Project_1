@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Math exam - Teacher Dashboard</title>
+    <link rel="stylesheet" href="{% static 'exam/comments.css' %}" />
+    <link rel="stylesheet" href="{% static 'exam/logout.css' %}" />
+  </head>
+  <body>
+    <h1>Final Mathematics Exam</h1>
+    <form method="post" action="../../logout/">
+      {% csrf_token %}
+      <button type="submit" class="logout-button">Logout</button>
+    </form>
+    {% include "exam/question_finder.html"%}<br />
+    {% include "exam/question_list.html"%}
+    <h2>Comments</h2>
+    {% if comments%} {% for comment in comments %}
+    <div class="comment-box">
+      <div class="comment-header">
+        <span class="comment-title">{{ comment.title }}</span>
+        <span class="comment-user">by {{ comment.user.username }}</span>
+      </div>
+      <!--Flaw: XSS-->
+      <!--safe should be removed to avoid XSS-->
+      <div class="comment-body">{{ comment.comment_text|safe }}</div>
+      <div class="comment-footer">
+        <span class="comment-date">{{ comment.pub_date|date:"Y-m-d" }}</span>
+      </div>
+    </div>
+    {% endfor %} {% else %}
+    <p>No comments published yet</p>
+    {% endif %}
+  </body>
+</html>

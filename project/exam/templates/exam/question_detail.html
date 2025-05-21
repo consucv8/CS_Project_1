@@ -1,0 +1,23 @@
+<!--Flaw: csrf_token missing-->
+<!--<form method="post">-->
+<form method="get" action="../answer_question_{{ question.id }}">
+  {# {% csrf_token %} #}
+  <fieldset>
+    <legend>{{ question.question_text }}</legend>
+    {% for answer in question.answers.all %} 
+    <input type="radio" name="answer"
+    value="{{ answer.id }}" id="{{ answer.id }}" 
+    {% if readonly %}
+    disabled
+    {%endif %} 
+    {% if answer.id == selected_answer.id %}
+    checked
+    {% endif %}
+     >
+    <label for="{{ answer.id }}">{{ answer.answer_text }} </label><br />
+    {% endfor %} 
+    {% if not readonly %}
+    <button type="submit">Submit</button>
+    {% endif %}
+  </fieldset>
+</form>
