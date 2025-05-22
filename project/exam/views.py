@@ -4,10 +4,10 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseBadRequest,
     HttpResponseForbidden,
+    HttpResponseNotAllowed,
 )
 from django.urls import reverse
-from .models import Question, Comment, AnsweredQuestion, Answer
-from django.views import generic
+from .models import Question, Comment, AnsweredQuestion
 import sqlite3
 
 
@@ -16,18 +16,6 @@ def get_question(request):
         topic = request.GET.get("topic")
         conn = sqlite3.connect("db.sqlite3")
         # Flaw: SQL Injection
-        # FIX THE FIX
-        # Fix (or use Question.objects.filter(topic=topic))
-        # cursor.execute(
-        #    "SELECT * FROM exam_question WHERE topic = ?",
-        #    (topic,),
-        #
-        rows = (
-            conn.cursor()
-            .execute("SELECT id FROM exam_question WHERE topic LIKE '%" + topic + "%'")
-            .fetchall()
-        )
-        ids = [row[0] for row in rows]
         topic = (
             conn.cursor()
             .execute(
@@ -35,9 +23,17 @@ def get_question(request):
             )
             .fetchone()
         )
+        # Fix: Use parameterized queries
+        # topic = (
+        #    conn.cursor()
+        #    .execute(
+        #        "SELECT topic FROM exam_question WHERE topic LIKE ?", (f"%{topic}%",)
+        #    )
+        #    .fetchone()
+        # )
         if topic:
             topic = topic[0]
-            questions = Question.objects.filter(id__in=ids)
+            questions = Question.objects.filter(topic=topic)
         else:
             topic = "All Topics"
             questions = Question.objects.all()
@@ -50,9 +46,10 @@ def get_question(request):
 
 @login_required
 def teacher_dashboard(request):
-    # Flaw: Students can access student dashboard
-    # if not request.user.username == "teacher":
-    #    return HttpResponseRedirect(reverse("exam:student_dashboard"))
+    # Flaw: Students can access teacher dashboard
+    # Fix: Check if user is teacher
+    # if request.user.username != "teacher":
+    #    return HttpResponseForbidden("You are not allowed to view this page.")
     questions, topic = get_question(request)
     question_url = "/exam/answer_"
     comments = Comment.objects.all()
@@ -71,7 +68,7 @@ def teacher_dashboard(request):
 @login_required
 def student_dashboard(request):
     if request.user.username == "teacher":
-        return HttpResponseRedirect(reverse("exam:teacher_dashboard"))
+        return HttpResponseForbidden("You are not allowed to view this page.")
     questions, topic = get_question(request)
     question_url = "/exam/question_"
     student = request.user.student
@@ -89,11 +86,9 @@ def student_dashboard(request):
 
 @login_required
 def question(request, question_id):
-    ##If request.GET.answer
-    question = get_object_or_404(Question, pk=question_id)
     if request.user.username == "teacher":
-        return HttpResponseRedirect(reverse("exam:teacher_dashboard"))
-
+        return HttpResponseForbidden("You are not allowed to view this page.")
+    question = get_object_or_404(Question, pk=question_id)
     if question_id in AnsweredQuestion.objects.filter(
         student=request.user.student
     ).values_list("question_id", flat=True):
@@ -118,6 +113,9 @@ def question(request, question_id):
 @login_required
 def answer(request, question_id):
     # Flaw: Students can access teacher answers
+    # Fix: Check if user is teacher
+    # if request.user.username != "teacher":
+    #    return HttpResponseForbidden("You are not allowed to view this page.")
     question = get_object_or_404(Question, pk=question_id)
     answer = question.answers.get(correct=True)
     return render(
@@ -134,12 +132,18 @@ def answer(request, question_id):
 @login_required
 def answer_question(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
+    if request.user.username == "teacher":
+        return HttpResponseForbidden("You are not allowed to view this page.")
+    # Flaw: Get allows avoidance of CSRF
+    # Fix: Use POST. for which django checks CSRF token
+    # if request.method == "POST":
     if request.method == "GET":
+        # selected_answer = request.POST.get("answer")
         selected_answer = request.GET.get("answer")
         answer = question.answers.get(id=selected_answer)
-        if selected_answer in AnsweredQuestion.objects.filter(
+        if question_id in AnsweredQuestion.objects.filter(
             student=request.user.student
-        ).values_list("answer_id", flat=True):
+        ).values_list("question_id", flat=True):
             return HttpResponseBadRequest("You have already answered this question.")
         answered_question = AnsweredQuestion(
             student=request.user.student, question=question, answer=answer
@@ -150,11 +154,14 @@ def answer_question(request, question_id):
             request.user.student.save()
         return HttpResponseRedirect(reverse("exam:question", args=(question_id,)))
     else:
-        return HttpResponseForbidden("Invalid request method.")
+        return HttpResponseNotAllowed(["GET"])
+        # return HttpResponseNotAllowed(["POST"])
 
 
 @login_required
 def comment(request):
+    if request.user.username == "teacher":
+        return HttpResponseForbidden("You are not allowed to view this page.")
     if request.method == "POST":
         title = request.POST.get("title")
         comment_text = request.POST.get("comment_text")
@@ -162,7 +169,7 @@ def comment(request):
         comment.save()
         return HttpResponseRedirect(reverse("exam:student_dashboard"))
     else:
-        return HttpResponseForbidden("Invalid request method.")
+        return HttpResponseNotAllowed(["POST"])
 
 
 @login_required

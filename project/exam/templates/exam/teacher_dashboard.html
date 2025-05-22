@@ -23,8 +23,9 @@
         <span class="comment-user">by {{ comment.user.username }}</span>
       </div>
       <!--Flaw: XSS-->
-      <!--safe should be removed to avoid XSS-->
       <div class="comment-body">{{ comment.comment_text|safe }}</div>
+      <!--Fix: safe should be removed to avoid XSS-->
+      <!--<div class="comment-body">{{ comment.comment_text }}</div>-->
       <div class="comment-footer">
         <span class="comment-date">{{ comment.pub_date|date:"Y-m-d" }}</span>
       </div>

@@ -1,7 +1,8 @@
-<!--Flaw: csrf_token missing-->
-<!--<form method="post">-->
+<!--Flaw: using get, that doesn't check csrf_token-->
 <form method="get" action="../answer_question_{{ question.id }}">
-  {# {% csrf_token %} #}
+<!--Fix use POST with csrf_token-->
+<!--<form method="post"  action="../answer_question_{{ question.id }}">-->
+  {#{% csrf_token %}#}
   <fieldset>
     <legend>{{ question.question_text }}</legend>
     {% for answer in question.answers.all %} 

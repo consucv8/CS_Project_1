@@ -51,6 +51,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "website.urls"
+
 #Flaw: Broken authentication. Very poor session management.
 #Fix: Remove the session management code and use Django's built-in session management.
 SESSION_ENGINE = 'website.session_management'
